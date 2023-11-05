@@ -1,5 +1,5 @@
 # maze-fastest-path
-Maze solver written in C++
+finds the fastest path to a maze, written in C++
 
 A program that reads in a maze from a file, attempts to find a path from start to finish, and outputs the result.
 
