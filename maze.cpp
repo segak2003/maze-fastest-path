@@ -1,19 +1,17 @@
 /* 
-maze.cpp
+mainMaze.cpp
 */
 
-#include <iostream>
-#include "mazeio.h"
+#include "readMaze.h"
 #include "queue.h"
 
 using namespace std;
 
-// Prototype for BFS_search, 
-int BFS_search(char**, int, int);
+// Prototype for maze_search, which you will fill in below.
+int maze_search(char**, int, int);
 
-// main function to read the maze and print result
+// main function to read, solve maze, and print result
 int main(int argc, char* argv[]) {
-    
    int rows, cols, result;
    char** mymaze=NULL;
    
@@ -22,17 +20,18 @@ int main(int argc, char* argv[]) {
        cout << "Please provide a maze input file" << endl;
        return 1;
    }
-   mymaze = read_maze(argv[1], &rows, &cols); 
+   mymaze = read_maze(argv[1], &rows, &cols); // FILL THIS IN
    
    if (mymaze == NULL) {
       cout << "Error, input format incorrect" << endl;
       return 1;
    }
 
-   
-   result = BFS_search(mymaze, rows, cols); 
+   // when working on Checkpoint 3, you will call maze_search here.
+   // here. but for Checkpoint 1, just assume we found the path.
+   result = maze_search(mymaze, rows, cols); // TO BE CHANGED
 
-   // examine value returned by BFS_search and print appropriate output
+   // examine value returned by maze_search and print appropriate output
    if (result == 1) { // path found!
       print_maze(mymaze, rows, cols);
    }
@@ -40,75 +39,72 @@ int main(int argc, char* argv[]) {
      cout << "Error, input format incorrect" << endl; 
      return 1; 
    }
-   else if (result == 0) { // no path found
+   else if (result == 0) { // no path :(
       cout << "No path could be found!" << endl;
    }
-   else { // maze has invalid format
+   else { // result == -1
       cout << "Invalid maze." << endl;
    }
 
-   // de-allocates all memory that read_maze allocated
+   // ADD CODE HERE to delete all memory 
+   // that read_maze allocated
    for (int i = 0; i < rows; i++) {
      delete[] mymaze[i]; 
    }
-   delete[] mymaze;
-   
+   delete[] mymaze; 
    return 0;
 }
 
-//values returned by BFS_search function
-enum Result {
-    PATH_FOUND = 1,
-    NO_PATH = 0,
-    INVALID_MAZE = -1
-};
-
-
-//This is where the BFS algorithm is used to find the quickest path
-//If path is found it will be filled in with '*' characters
-int BFS_search(char** maze, int rows, int cols) 
+/**************************************************
+ * Attempt to find shortest path and return:
+ *  1 if successful
+ *  0 if no path exists
+ * -1 if invalid maze (not exactly one S and one F)
+ *
+ * If path is found fill it in with '*' characters
+ *  but don't overwrite the 'S' and 'F' cells
+ *************************************************/
+int maze_search(char** maze, int rows, int cols) 
 {
+  //Step 1
   Location start; 
   Location end; 
-  int numS = 0; 
-  int numF; 
-  bool pathFound = false; 
-  
+  int countS = 0; 
+  int countF = 0; 
+  bool path = false; 
   //check to see if the maze is valid 
   for (int i = 0; i < rows; i++) {
     for (int j = 0; j < rows; j++) {
-      if (!(maze[i][j] == '#' || maze[i][j] == '.') || 
+      if (!(maze[i][j] == '#' || maze[i][j] == '.' || 
             maze[i][j] == 'S' || maze[i][j] == 'F')) {
         //means that the maze is not valid, because it contains a different characters
         cout << "Error, input format incorrect" << endl; 
-        return INVALID_MAZE; 
+        return -1; 
       }     
     }
   }
-  
   //begin by finding the starting and finishing location 
   for (int i = 0; i < rows; i++) {
     for (int j = 0; j < cols; j++) {
-        
       if (maze[i][j] == 'S') {
         start.row = i; 
         start.col = j; 
-        numS = 1; 
+        countS++; 
       }
       else if (maze[i][j] == 'F') {
         end.row = i; 
         end.col = j; 
-        numF = 1; 
+        countF++; 
       }
     }
   }
-  
-  //return INVALID_MAZE (-1) if necessary
+  //return -1 if necessary
   if (!(countS == 1 && countF == 1)) {
     cout << "Maze is not valid" << endl; 
-    return INVALID_MAZE; 
+    return -1; 
   }
   
+  //Step 2
   Location predecessorInitial; 
   predecessorInitial.row = -1; 
   predecessorInitial.col = -1; 
@@ -138,6 +134,8 @@ int BFS_search(char** maze, int rows, int cols)
     }
   }
   
+  //Step 3 
+  
   //put the location into the queue
   queue.add_to_back(start); 
   //loop 
@@ -162,12 +160,12 @@ int BFS_search(char** maze, int rows, int cols)
           maze[curr.row][curr.col] = '*'; 
           curr = predecessor[curr.row][curr.col]; 
         }
-        pathFound = true; 
+        path = true; 
         break;   
       }
       
       //check to see if it is an open space
-      else if (maze[north.row][north.col] == '.' 
+      else if (maze[north.row][north.col]== '.' 
                && visited[north.row][north.col] ==0) {
         //add it to the back of the queue
         queue.add_to_back(north);
@@ -188,17 +186,17 @@ int BFS_search(char** maze, int rows, int cols)
       
       //check if we have found the finish 
       if (maze[west.row][west.col] == 'F') {
-        //now backtrack
+        //backtrace
         while (maze[curr.row][curr.col] != 'S') {
           maze[curr.row][curr.col] = '*'; 
           curr = predecessor[curr.row][curr.col];  
         }
-        pathFound = true; 
+        path = true; 
         break; 
       }
           
       //check to see if it is an open space
-      else if (maze[west.row][west.col] == '.' && 
+      else if (maze[west.row][west.col]=='.' && 
                visited[west.row][west.col] == 0) {  
         //add it to the back of the queue
         queue.add_to_back(west);
@@ -224,7 +222,7 @@ int BFS_search(char** maze, int rows, int cols)
           maze[curr.row][curr.col] = '*'; 
           curr = predecessor[curr.row][curr.col];  
         }
-        pathFound = true; 
+        path = true; 
         break;   
       }
      
@@ -256,7 +254,7 @@ int BFS_search(char** maze, int rows, int cols)
           curr = predecessor[curr.row][curr.col]; 
          
         }
-        pathFound = true; 
+        path = true; 
         break;   
       }
       //check to see if it is an open space
@@ -281,10 +279,10 @@ int BFS_search(char** maze, int rows, int cols)
   delete[] visited; 
   
   //return correct values 
-  if (pathFound) {
-    return PATH_FOUND; 
+  if (path) {
+    return 1; 
   }
   else {
-    return NO_PATH; 
+    return 0; 
   }
 }
